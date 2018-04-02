@@ -1,5 +1,7 @@
 import scrapy
+from scrapy.selector import Selector
 import os
+import re
 
 class GlutenbergSpider(scrapy.Spider):
   name = "glutenberg"
@@ -12,15 +14,26 @@ class GlutenbergSpider(scrapy.Spider):
       yield scrapy.Request(url=url, callback=self.parse)
 
   def parse(self, response):
+
+    with open('response', 'wb') as f:
+      f.write(response.body)
+    self.log('Saved response')
+
     folder_name = 'moby_dick_text'
     if not os.path.exists(folder_name):
       os.makedirs(folder_name)
 
-    for chapter_title in response.css('h2').re('CHAPTER (\d+\. .*)\.'):
+    chapters = re.split('<div style="height: 4em;">\s*\n\s*(<br\s*/>)+\s*\n\s*</div>', response.body)
 
-      chapter_filename = folder_name + '/' + chapter_title
-      with open(chapter_filename, 'wb') as f:
-        f.write('put chapter contents here')
-    with open('response', 'wb') as f:
-      f.write(response.body)
-    self.log('Saved response')
+    for chapter in chapters:
+      selector = Selector(text=chapter)
+      chapter_title = selector.css('h2').re_first('CHAPTER (\d+\. .*)\.')
+      if (chapter_title is not None):
+        chapter_contents = selector.xpath('//p/text()').extract()
+        #chapter_contents = selector.css('p::text').extract()
+        chapter_filename = folder_name + '/' + chapter_title
+        with open(chapter_filename, 'wb') as f:
+          for paragraph in chapter_contents:
+            f.write(paragraph.encode('utf-8'))
+            f.write('')
+        self.log('Saved ' + chapter_title)
