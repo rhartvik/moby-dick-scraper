@@ -15,7 +15,7 @@ class GlutenbergSpider(scrapy.Spider):
 
   def parse(self, response):
 
-    with open('response', 'wb') as f:
+    with open('response.txt', 'wb') as f:
       f.write(response.body)
     self.log('Saved response')
 
@@ -31,7 +31,7 @@ class GlutenbergSpider(scrapy.Spider):
       if (chapter_title is not None):
         chapter_contents = selector.xpath('//p/text()').extract()
         #chapter_contents = selector.css('p::text').extract()
-        chapter_filename = folder_name + '/' + chapter_title
+        chapter_filename = folder_name + '/' + chapter_title + '.txt'
         with open(chapter_filename, 'wb') as f:
           for paragraph in chapter_contents:
             f.write(paragraph.encode('utf-8'))
